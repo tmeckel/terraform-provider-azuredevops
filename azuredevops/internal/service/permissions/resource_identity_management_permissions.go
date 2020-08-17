@@ -38,12 +38,12 @@ func ResourceIdentityManagementPermissions() *schema.Resource {
 func resourceIdentityManagementCreateOrUpdate(d *schema.ResourceData, m interface{}) error {
 	clients := m.(*client.AggregatedClient)
 
-	sn, aclToken, err := securityhelper.InitializeSecurityNamespaceAndToken(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
+	sn, err := securityhelper.NewSecurityNamespace(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
 	if err != nil {
 		return err
 	}
 
-	if err = securityhelper.SetPrincipalPermissions(d, sn, aclToken, nil, false); err != nil {
+	if err = securityhelper.SetPrincipalPermissions(d, sn, nil, false); err != nil {
 		return err
 	}
 
@@ -53,18 +53,18 @@ func resourceIdentityManagementCreateOrUpdate(d *schema.ResourceData, m interfac
 func resourceIdentityManagementRead(d *schema.ResourceData, m interface{}) error {
 	clients := m.(*client.AggregatedClient)
 
-	sn, aclToken, err := securityhelper.InitializeSecurityNamespaceAndToken(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
+	sn, err := securityhelper.NewSecurityNamespace(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
 	if err != nil {
 		return err
 	}
 
-	principalPermissions, err := securityhelper.GetPrincipalPermissions(d, sn, aclToken)
+	principalPermissions, err := securityhelper.GetPrincipalPermissions(d, sn)
 	if err != nil {
 		return err
 	}
 	if principalPermissions == nil {
 		d.SetId("")
-		log.Printf("[INFO] Permissions for ACL token %q not found. Removing from state", *aclToken)
+		log.Printf("[INFO] Permissions for ACL token %q not found. Removing from state", sn.GetToken())
 		return nil
 	}
 
@@ -75,12 +75,12 @@ func resourceIdentityManagementRead(d *schema.ResourceData, m interface{}) error
 func resourceIdentityManagementDelete(d *schema.ResourceData, m interface{}) error {
 	clients := m.(*client.AggregatedClient)
 
-	sn, aclToken, err := securityhelper.InitializeSecurityNamespaceAndToken(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
+	sn, err := securityhelper.NewSecurityNamespace(d, clients, securityhelper.SecurityNamespaceIDValues.Identity, createIdentityManagementToken)
 	if err != nil {
 		return err
 	}
 
-	if err := securityhelper.SetPrincipalPermissions(d, sn, aclToken, &securityhelper.PermissionTypeValues.NotSet, true); err != nil {
+	if err := securityhelper.SetPrincipalPermissions(d, sn, &securityhelper.PermissionTypeValues.NotSet, true); err != nil {
 		return err
 	}
 
@@ -88,7 +88,7 @@ func resourceIdentityManagementDelete(d *schema.ResourceData, m interface{}) err
 	return nil
 }
 
-func createIdentityManagementToken(d *schema.ResourceData, clients *client.AggregatedClient) (*string, error) {
+func createIdentityManagementToken(d *schema.ResourceData, clients *client.AggregatedClient) (string, error) {
 	projectID := d.Get("project_id").(string)
 
 	aclToken := fmt.Sprintf("%s", projectID)
@@ -99,13 +99,13 @@ func createIdentityManagementToken(d *schema.ResourceData, clients *client.Aggre
 		})
 
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if idlist == nil || len(*idlist) != 1 {
-			return nil, fmt.Errorf("Failed to load identity information for defined principals [%s]", v.(string))
+			return "", fmt.Errorf("Failed to load identity information for defined principals [%s]", v.(string))
 		}
 		aclToken += "\\" + (*idlist)[0].Id.String()
 	}
 
-	return &aclToken, nil
+	return aclToken, nil
 }
