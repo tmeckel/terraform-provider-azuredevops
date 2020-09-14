@@ -40,12 +40,31 @@ func ResourceProject() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceProjectStateResourceV0V1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceProjectStateUpgradeV0ToV1,
+				Version: 0,
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:             schema.TypeString,
-				Required:         true,
+				Optional:         true,
 				ValidateFunc:     validation.StringIsNotWhiteSpace,
 				DiffSuppressFunc: suppress.CaseDifference,
+				ConflictsWith:    []string{"project_name"},
+				ExactlyOneOf:     []string{"name", "project_name"},
+			},
+			"project_name": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateFunc:     validation.StringIsNotWhiteSpace,
+				DiffSuppressFunc: suppress.CaseDifference,
+				ConflictsWith:    []string{"name"},
+				ExactlyOneOf:     []string{"name", "project_name"},
+				Deprecated:       "This attribute is deprecated and will be removed in one of the next following releases. Use property 'name' instead",
 			},
 			"description": {
 				Type:     schema.TypeString,
@@ -375,10 +394,14 @@ func expandProject(clients *client.AggregatedClient, d *schema.ResourceData, for
 		}
 	}
 
+	name, ok := d.GetOk("name")
+	if !ok {
+		name = d.Get("project_name")
+	}
 	project := &core.TeamProject{
 		Id:           projectID,
-		Name:         converter.String(d.Get("name").(string)),
-		Description:  converter.String(d.Get("description").(string)),
+		Name:         converter.StringFromInterface(name),
+		Description:  converter.StringFromInterface(d.Get("description")),
 		Visibility:   &visibility,
 		Capabilities: capabilities,
 	}
@@ -450,4 +473,72 @@ func lookupProcessTemplateName(clients *client.AggregatedClient, templateID stri
 	}
 
 	return *process.Name, nil
+}
+
+/*
+ * Schema upgrades
+ */
+func resourceProjectStateResourceV0V1() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"project_name": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateFunc:     validation.StringIsNotWhiteSpace,
+				DiffSuppressFunc: suppress.CaseDifference,
+			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"visibility": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Default:          core.ProjectVisibilityValues.Private,
+				DiffSuppressFunc: suppress.CaseDifference,
+				ValidateFunc: validation.StringInSlice([]string{
+					string(core.ProjectVisibilityValues.Private),
+					string(core.ProjectVisibilityValues.Public),
+				}, false),
+			},
+			"version_control": {
+				Type:             schema.TypeString,
+				ForceNew:         true,
+				Optional:         true,
+				Default:          core.SourceControlTypesValues.Git,
+				DiffSuppressFunc: suppress.CaseDifference,
+				ValidateFunc: validation.StringInSlice([]string{
+					string(core.SourceControlTypesValues.Git),
+					string(core.SourceControlTypesValues.Tfvc),
+				}, true),
+			},
+			"work_item_template": {
+				Type:             schema.TypeString,
+				ForceNew:         true,
+				Optional:         true,
+				ValidateFunc:     validation.StringIsNotWhiteSpace,
+				DiffSuppressFunc: suppress.CaseDifference,
+				Default:          "Agile",
+			},
+			"process_template_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"features": {
+				Type:         schema.TypeMap,
+				Optional:     true,
+				ValidateFunc: validateProjectFeatures,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+		},
+	}
+}
+
+func resourceProjectStateUpgradeV0ToV1(rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	prjName := rawState["project_name"].(string)
+	rawState["name"] = prjName
+	return rawState, nil
 }

@@ -9,6 +9,7 @@ package core
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -348,4 +349,39 @@ func TestAzureDevOpsProject_ConfigureProjectFeatures_HandleErrorCorrectly(t *tes
 
 	err := configureProjectFeatures(clients, "", projectName, &featureStates)
 	require.NotNil(t, err)
+}
+
+/****
+ * Schema Upgrade tests
+ */
+
+func testProjectResourceInstanceStateDataV0() map[string]interface{} {
+	return map[string]interface{}{
+		"project_name":    "test",
+		"description":     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sit amet pulvinar diam. Maecenas efficitur tristique leo, et malesuada purus.",
+		"visibility":      "private",
+		"version_control": "git",
+	}
+}
+
+func testProjectResourceInstanceStateDataV1() map[string]interface{} {
+	return map[string]interface{}{
+		"name":            "test",
+		"project_name":    "test",
+		"description":     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sit amet pulvinar diam. Maecenas efficitur tristique leo, et malesuada purus.",
+		"visibility":      "private",
+		"version_control": "git",
+	}
+}
+
+func TestProjectResourceInstanceStateUpgradeV0(t *testing.T) {
+	expected := testProjectResourceInstanceStateDataV1()
+	actual, err := resourceProjectStateUpgradeV0ToV1(testProjectResourceInstanceStateDataV0(), nil)
+	if err != nil {
+		t.Fatalf("error migrating state: %s", err)
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", expected, actual)
+	}
 }
