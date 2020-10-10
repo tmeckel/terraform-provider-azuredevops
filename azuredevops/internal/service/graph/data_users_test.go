@@ -28,6 +28,7 @@ var usrList1 = []graph.GraphUser{
 		Descriptor:    converter.String("aad.YWU4YzJkMTktOThmYS03ZDhmLWJhNTAtOWI4MWQzYTUxZjcy"),
 		DisplayName:   converter.String("Desiree M. Collins"),
 		PrincipalName: converter.String("DesireeMCollins@jourrapide.com"),
+		MailAddress:   converter.String("DesireeMCollins_mail@jourrapide.com"),
 		Origin:        converter.String("aad"),
 		OriginId:      converter.String("bc522d83-7192-4fad-b885-5e1334da4f94"),
 	},
@@ -42,6 +43,7 @@ var usrList1 = []graph.GraphUser{
 		Descriptor:    converter.String("aad.NTJmM2YzZmMtZmE4NS00ZGNhLTkwYjUtMDNiY2U0NjBlMmIy"),
 		DisplayName:   converter.String("Walter M. Brooks"),
 		PrincipalName: converter.String("WalterMBrooks@rhyta.com"),
+		MailAddress:   converter.String("WalterMBrooks_mail@rhyta.com"),
 		Origin:        converter.String("aad"),
 		OriginId:      converter.String("8c840d92-f19e-4dfe-8eab-5a1fd67a3a77"),
 	},
@@ -79,7 +81,7 @@ var usrList2 = []graph.GraphUser{
 }
 
 // verfies that the data source propagates an error from the API correctly
-func TestDataSourceUser_Read_TestDoesNotSwallowError(t *testing.T) {
+func TestDataSourceUsers_Read_TestDoesNotSwallowError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -103,7 +105,7 @@ func TestDataSourceUser_Read_TestDoesNotSwallowError(t *testing.T) {
 	require.Contains(t, err.Error(), "ListUsers() Failed")
 }
 
-func TestDataSourceUser_Read_HandlesContinuationToken(t *testing.T) {
+func TestDataSourceUsers_Read_HandlesContinuationToken(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -145,7 +147,7 @@ func TestDataSourceUser_Read_HandlesContinuationToken(t *testing.T) {
 }
 
 // verifies that a single user can be read successfully
-func TestDataSourceUser_Read_TestReadEmptyUser(t *testing.T) {
+func TestDataSourceUsers_Read_TestReadEmptyUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -179,7 +181,7 @@ func TestDataSourceUser_Read_TestReadEmptyUser(t *testing.T) {
 	require.Equal(t, 0, usersSet.Len())
 }
 
-func TestDataSourceUser_Read_TestFilterByPricipalName(t *testing.T) {
+func TestDataSourceUsers_Read_TestFilterByPricipalName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -216,7 +218,7 @@ func TestDataSourceUser_Read_TestFilterByPricipalName(t *testing.T) {
 	require.True(t, usersSet.Contains(u))
 }
 
-func TestDataSourceUser_Read_TestFilterByOrigin(t *testing.T) {
+func TestDataSourceUsers_Read_TestFilterByOrigin(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -263,7 +265,7 @@ func TestDataSourceUser_Read_TestFilterByOrigin(t *testing.T) {
 	require.Equal(t, 2, iFound)
 }
 
-func TestDataSourceUser_Read_TestFilterByOriginId(t *testing.T) {
+func TestDataSourceUsers_Read_TestFilterByOriginId(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -310,7 +312,7 @@ func TestDataSourceUser_Read_TestFilterByOriginId(t *testing.T) {
 	require.Equal(t, 2, iFound)
 }
 
-func TestDataSourceUser_Read_TestFilterByOriginOriginId(t *testing.T) {
+func TestDataSourceUsers_Read_TestFilterByOriginOriginId(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -358,7 +360,7 @@ func TestDataSourceUser_Read_TestFilterByOriginOriginId(t *testing.T) {
 	require.Equal(t, 1, iFound)
 }
 
-func TestDataSourceUser_Read_TestFilterBySubjectType(t *testing.T) {
+func TestDataSourceUsers_Read_TestFilterBySubjectType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
