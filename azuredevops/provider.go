@@ -60,6 +60,7 @@ func Provider() *schema.Provider {
 			"azuredevops_git_repositories": git.DataGitRepositories(),
 			"azuredevops_git_repository":   git.DataGitRepository(),
 			"azuredevops_users":            graph.DataUsers(),
+			"azuredevops_user":             graph.DataUser(),
 			"azuredevops_area":             workitemtracking.DataArea(),
 			"azuredevops_iteration":        workitemtracking.DataIteration(),
 		},

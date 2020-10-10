@@ -62,6 +62,7 @@ func TestProvider_HasChildDataSources(t *testing.T) {
 		"azuredevops_agent_queue",
 		"azuredevops_area",
 		"azuredevops_iteration",
+		"azuredevops_user",
 	}
 
 	dataSources := Provider().DataSourcesMap
